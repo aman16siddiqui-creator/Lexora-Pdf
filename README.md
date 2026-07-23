@@ -33,19 +33,33 @@ Intermediate
 Implement the following pipeline:
 
 PDF Upload
+
     ↓
+
 Text Extraction
+
     ↓
+
 Text Chunking
+    
     ↓
+
 Embedding Generation
+  
     ↓
+
 Pinecone Vector Indexing
+  
     ↓
+
 Semantic Retrieval
+
     ↓
+
 LLM Response Generation
+ 
     ↓
+
 Answer with Source Reference
 
 🧰 **Required Technologies:**
