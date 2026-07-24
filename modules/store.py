@@ -56,6 +56,14 @@ def load_conversation(conv_id: str) -> Optional[dict]:
             return None
 
 
+def delete_conversation(conv_id: str) -> None:
+    """Permanently removes a conversation's saved JSON file. Safe to call
+    even if the file is already gone."""
+    path = _path(conv_id)
+    if os.path.exists(path):
+        os.remove(path)
+
+
 def list_conversations() -> List[dict]:
     """Lightweight summaries (id, title, updated_at) of every non-empty
     saved conversation, newest first."""

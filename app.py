@@ -179,6 +179,17 @@ st.markdown(
         background: var(--brand-light); color: var(--brand);
       }}
 
+      /* Small trash-icon delete button next to each chat title */
+      .st-key-sidebar_scroll [data-testid="stHorizontalBlock"] button {{
+        padding: 0.25rem !important;
+        min-height: 2rem !important;
+        color: var(--muted) !important;
+      }}
+      .st-key-sidebar_scroll [data-testid="stHorizontalBlock"] button:hover {{
+        color: #e11d48 !important;
+        background: rgba(225, 29, 72, 0.08) !important;
+      }}
+
       div[data-testid="stChatMessage"] {{ background: transparent !important; border-radius: 12px; padding: 0.4rem 0.2rem; }}
 
       .source-card {{
@@ -400,12 +411,38 @@ with st.sidebar:
                 st.markdown(f"<div class='sidebar-caption'>{label}</div>", unsafe_allow_html=True)
                 for c in groups[label]:
                     is_active = c["id"] == st.session_state.conversation_id
-                    if st.button(
-                        c["title"], key=f"conv_{c['id']}", use_container_width=True,
-                        type="primary" if is_active else "secondary",
-                    ):
-                        open_conversation(c["id"])
-                        st.rerun()
+                    col_chat, col_del = st.columns([5, 1], gap="small")
+                    with col_chat:
+                        if st.button(
+                            c["title"], key=f"conv_{c['id']}", use_container_width=True,
+                            type="primary" if is_active else "secondary",
+                        ):
+                            open_conversation(c["id"])
+                            st.rerun()
+                    with col_del:
+                        if st.button(
+                            "", key=f"del_{c['id']}", icon=":material/delete:",
+                            use_container_width=True,
+                        ):
+                            st.session_state.pending_delete_conv = c["id"]
+
+                    if st.session_state.get("pending_delete_conv") == c["id"]:
+                        st.markdown(
+                            f"<div class='system-note'>Delete \"{c['title']}\"? This can't be undone.</div>",
+                            unsafe_allow_html=True,
+                        )
+                        col_yes, col_no = st.columns(2)
+                        with col_yes:
+                            if st.button("Delete", key=f"confirm_del_{c['id']}", type="primary", use_container_width=True):
+                                store.delete_conversation(c["id"])
+                                st.session_state.pending_delete_conv = None
+                                if is_active:
+                                    start_new_chat()
+                                st.rerun()
+                        with col_no:
+                            if st.button("Cancel", key=f"cancel_del_{c['id']}", use_container_width=True):
+                                st.session_state.pending_delete_conv = None
+                                st.rerun()
 
         st.markdown("---")
         with st.expander("This chat's documents & retrieval", icon=":material/attach_file:"):
