@@ -20,6 +20,30 @@ from modules import store
 
 st.set_page_config(page_title="Lexora", page_icon=":material/auto_awesome:", layout="wide")
 
+# Our own logo mark — plain SVG, so it's crisp at any size and needs no
+# external image file. Icon (purple square + "L" + doc lines + sparkle)
+# plus the "Lexora" wordmark and "PDF assistant" tagline, all in one unit.
+LOGO_SVG = """
+<svg class="app-logo-svg" viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Lexora">
+<defs>
+<linearGradient id="docGrad" x1="0" y1="0" x2="1" y2="1">
+<stop offset="0%" stop-color="#e9a6fb"/>
+<stop offset="55%" stop-color="#d246e5"/>
+<stop offset="100%" stop-color="#7c1fa3"/>
+</linearGradient>
+</defs>
+<rect x="0" y="0" width="100" height="100" rx="18" fill="url(#docGrad)"/>
+<path d="M74 0 L100 0 L100 26 Z" fill="#ffffff" opacity="0.15"/>
+<path d="M92 10 L94.5 16.5 L101 19 L94.5 21.5 L92 28 L89.5 21.5 L83 19 L89.5 16.5 Z" fill="#ffffff"/>
+<text x="18" y="72" font-size="56" font-weight="700" fill="#ffffff" font-family="Arial, sans-serif">L</text>
+<rect x="58" y="48" width="26" height="4" rx="2" fill="#ffffff" opacity="0.9"/>
+<rect x="58" y="58" width="20" height="4" rx="2" fill="#ffffff" opacity="0.7"/>
+<rect x="58" y="68" width="16" height="4" rx="2" fill="#ffffff" opacity="0.5"/>
+<text x="118" y="56" font-size="40" font-weight="700" fill="url(#docGrad)" font-family="Arial, sans-serif">Lexora</text>
+<text x="120" y="76" font-size="11" font-weight="600" letter-spacing="2" fill="#8b8b9a" font-family="Arial, sans-serif">PDF ASSISTANT</text>
+</svg>
+"""
+
 # ----------------------------------------------------------------------
 # Theme (Appearance, set from the Settings dialog) — CSS-variable based
 # since Streamlit's native widget chrome can't be re-themed at runtime;
@@ -27,11 +51,11 @@ st.set_page_config(page_title="Lexora", page_icon=":material/auto_awesome:", lay
 # cards, source cards) plus the major stTestId containers.
 # ----------------------------------------------------------------------
 LIGHT = dict(bg="#ffffff", bg2="#f7f7f8", sidebar="#f7f7f8", ink="#1e1b2e",
-             muted="#6b7280", border="#e5e7eb", card="#fafafa",
-             brand="#4f46e5", brand_light="#eef2ff")
+             muted="#6b7280", border="#e3c6ea", card="#fafafa",
+             brand="#d246e5", brand_light="#f8e8fc")
 DARK = dict(bg="#212121", bg2="#171717", sidebar="#171717", ink="#ececec",
             muted="#9ca3af", border="#3a3a3a", card="#2a2a2a",
-            brand="#818cf8", brand_light="#312e81")
+            brand="#e26bee", brand_light="#4a1450")
 
 
 def _vars(v: dict) -> str:
@@ -64,12 +88,21 @@ st.markdown(
          stable, official switch for it. We deliberately do NOT touch
          [data-testid="stHeader"]/stToolbar with CSS visibility rules here:
          doing that guesses at internal test-ids that change between
-         Streamlit versions, and on the last deploy it ended up hiding the
+         Streamlit versions, and on a previous deploy it ended up hiding the
          "reopen sidebar" arrow too, with no way to get it back. Leaving
          the header alone guarantees that control keeps working. */
       #MainMenu, footer {{visibility: hidden;}}
       [data-testid="stHeader"] {{background: var(--bg) !important; box-shadow: none !important;}}
-      .block-container {{padding-top: 1.5rem; padding-bottom: 6rem; max-width: 860px;}}
+
+      /* Remove just the "Deploy" button + kebab-menu toolbar (dev-mode
+         only). This is a separate element from the sidebar toggle, so
+         hiding it doesn't risk breaking the reopen control the way
+         hiding the whole header previously did. */
+      [data-testid="stAppDeployButton"], [data-testid="stToolbarActions"] {{
+        display: none !important;
+      }}
+
+      .block-container {{padding-top: 2.75rem; padding-bottom: 6rem; max-width: 860px;}}
 
       /* The chat input is pinned to the bottom of the viewport outside the
          centered .block-container, so on a wide layout (or a closed
@@ -85,20 +118,66 @@ st.markdown(
         background: var(--bg) !important;
       }}
       [data-testid="stSidebar"] {{ background: var(--sidebar-bg) !important; }}
+      [data-testid="stSidebar"] h3 {{ color: var(--brand) !important; }}
+
+      /* Sidebar collapse/expand control — styled as a small standalone
+         box (border + background + shadow) so it's obviously a clickable
+         toggle whether the sidebar is open (collapse button, shown inside
+         the sidebar) or closed (reopen button, shown in the header area).
+         Only color/background/border/opacity are touched here — never
+         `display: none` — since that previously broke the "reopen
+         sidebar" control across a Streamlit version.
+
+         Streamlit fades this control to opacity:0 until the header is
+         hovered — we override that here so it's permanently visible,
+         not just on hover. */
+      [data-testid="stSidebarCollapseButton"],
+      [data-testid="stSidebarCollapsedControl"] {{
+        opacity: 1 !important;
+        visibility: visible !important;
+      }}
+      [data-testid="stSidebarCollapseButton"] button,
+      [data-testid="stSidebarCollapsedControl"] button {{
+        opacity: 1 !important;
+        color: var(--brand) !important;
+        background: var(--card-bg) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 8px !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      }}
+      [data-testid="stSidebarCollapseButton"] button:hover,
+      [data-testid="stSidebarCollapsedControl"] button:hover {{
+        background: var(--brand-light) !important;
+      }}
+      [data-testid="stSidebarCollapseButton"] svg,
+      [data-testid="stSidebarCollapsedControl"] svg {{
+        opacity: 1 !important;
+        color: var(--brand) !important;
+        fill: var(--brand) !important;
+      }}
       body, [data-testid="stMarkdownContainer"] p, [data-testid="stMarkdownContainer"] li,
       .stMarkdown, h1, h2, h3, label, .stCaption {{ color: var(--ink); }}
 
-      .app-header h1 {{ font-size: 1.8rem; font-weight: 700; margin: 0; color: var(--ink); }}
+      .app-header {{ display: flex; align-items: center; margin-bottom: 0.4rem; }}
+      .app-logo-svg {{ height: 88px; width: auto; }}
+        font-size: 1.8rem; font-weight: 700; margin: 0;
+        background: linear-gradient(90deg, var(--brand), #ff8fe0);
+        -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+        color: var(--ink);
+      }}
       .app-subtitle {{ color: var(--muted); font-size: 0.92rem; margin-top: -0.2rem; margin-bottom: 1rem; }}
 
       .stButton>button {{ border-radius: 8px; }}
       .stButton>button[kind="primary"] {{
         background: var(--brand); border: none; font-weight: 600;
       }}
+      .stButton>button[kind="primary"]:hover {{ filter: brightness(1.08); }}
       .stButton>button[kind="secondary"] {{
         background: transparent; border: 1px solid transparent; text-align: left; color: var(--ink);
       }}
-      [data-testid="stSidebar"] .stButton>button[kind="secondary"]:hover {{ background: var(--card-bg); }}
+      [data-testid="stSidebar"] .stButton>button[kind="secondary"]:hover {{
+        background: var(--brand-light); color: var(--brand);
+      }}
 
       div[data-testid="stChatMessage"] {{ background: transparent !important; border-radius: 12px; padding: 0.4rem 0.2rem; }}
 
@@ -117,15 +196,29 @@ st.markdown(
       }}
       .sidebar-caption {{
         font-size: 0.72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
-        color: var(--muted); margin: 0.6rem 0 0.15rem 0.2rem;
+        color: var(--brand); margin: 0.6rem 0 0.15rem 0.2rem;
       }}
-      [data-testid="stChatInput"] {{ background: var(--card-bg) !important; border-color: var(--border) !important; }}
+      [data-testid="stChatInput"] {{
+        background: var(--card-bg) !important; border: 2px solid var(--brand) !important;
+      }}
       [data-testid="stChatInput"] textarea {{ color: var(--ink) !important; }}
-
-      .io-toolbar {{ display: flex; justify-content: flex-end; margin-bottom: 0.15rem; }}
-      .st-key-toggle_auto_read button {{
-        border-radius: 999px !important; padding: 0.2rem 0.6rem !important;
+      [data-testid="stChatInput"]:focus-within {{
+        border-color: var(--brand) !important; box-shadow: 0 0 0 2px var(--brand-light) !important;
       }}
+      /* Attach (+) and mic icon buttons inside the chat input */
+      [data-testid="stChatInput"] button {{ color: var(--brand) !important; }}
+      [data-testid="stChatInput"] button svg {{ fill: var(--brand) !important; color: var(--brand) !important; }}
+      /* Send button is a filled circle — recolor its fill to purple too */
+      [data-testid="stChatInputSubmitButton"] {{ background: var(--brand) !important; border-color: var(--brand) !important; }}
+      [data-testid="stChatInputSubmitButton"] svg {{
+        fill: #ffffff !important; stroke: #ffffff !important; color: #ffffff !important; opacity: 1 !important;
+      }}
+      [data-testid="stChatInputSubmitButton"] svg path {{ fill: #ffffff !important; stroke: #ffffff !important; }}
+
+      /* Purple accent on native form controls (sliders, checkboxes, radios) */
+      input[type="checkbox"], input[type="radio"], input[type="range"] {{ accent-color: var(--brand); }}
+      ::selection {{ background: var(--brand-light); color: var(--brand); }}
+      a {{ color: var(--brand); }}
 
       /* Sidebar: conversation list scrolls; Settings stays pinned to the
          bottom of the sidebar regardless of how many chats are listed. */
@@ -370,12 +463,10 @@ with st.sidebar:
 # Main layout — just the chat
 # ----------------------------------------------------------------------
 st.markdown(
-    """
-    <div class="app-header"><h1>Lexora</h1></div>
+    f"""
+    <div class="app-header">{LOGO_SVG}</div>
     <div class="app-subtitle">
-      Attach PDFs — even scanned ones, OCR kicks in automatically — right from the
-      message box, then ask questions by typing or speaking. Answers come strictly
-      from your documents.
+      What's on the agenda today!
     </div>
     """,
     unsafe_allow_html=True,
@@ -528,14 +619,6 @@ if st.session_state.tts_text:
         """,
         height=0,
     )
-
-# ---- Slim toolbar fused to the top of the message box: voice-output ----
-st.markdown("<div class='io-toolbar'>", unsafe_allow_html=True)
-icon = ":material/volume_up:" if st.session_state.auto_read_aloud else ":material/volume_off:"
-if st.button(icon, key="toggle_auto_read", help="Read answers aloud automatically"):
-    st.session_state.auto_read_aloud = not st.session_state.auto_read_aloud
-    st.rerun()
-st.markdown("</div>", unsafe_allow_html=True)
 
 # ---- The single ChatGPT-style input: text + "+" attach + mic + send ----
 prompt = st.chat_input(

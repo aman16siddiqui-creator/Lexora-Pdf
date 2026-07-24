@@ -11,7 +11,7 @@ maxUploadSize = 20
 toolbarMode = "viewer"
 
 [theme]
-primaryColor = "#2E86AB"
+primaryColor = "#d246e5"
 backgroundColor = "#FFFFFF"
 secondaryBackgroundColor = "#F0F4F8"
 textColor = "#1A1A1A"
